@@ -1502,118 +1502,6 @@ class GLAMv2(nn.Module):
 
 
 
-class SoftAttentionPooling(nn.Module):
-    def __init__(self, num_frames):
-        super(SoftAttentionPooling, self).__init__()
-        self.W = nn.Parameter(torch.randn(1, num_frames))  # Trainable parameter W of size 1xnum_frames
-
-    def forward(self, x):
-        """
-        Args:
-            x (torch.Tensor): Input tensor of shape [batch_size, feature_dim, num_frames]
-        
-        Returns:
-            torch.Tensor: Output tensor of shape [batch_size, feature_dim]
-        """
-        # Transpose x to [batch_size, num_frames, feature_dim] for multiplication
-        x_transposed = x.permute(0, 2, 1)  # Shape: [batch_size, num_frames, feature_dim]
-
-
-        # Compute attention scores (unnormalized)
-        attention_scores = torch.tanh(torch.matmul(x_transposed, self.W.T))  # Shape: [batch_size, num_frames, 1]
-        
-        # Apply softmax to get attention weights
-        attention_weights = F.softmax(attention_scores, dim=1)  # Shape: [batch_size, num_frames, 1]
-    
-        # Apply attention weights to the input tensor by multiplying weights with features
-        weighted_sum = torch.sum(attention_weights * x_transposed, dim=1)  # Shape: [batch_size, feature_dim]
-
-
-
-        return weighted_sum
-   
-
-
-class ChannelTimeSenseSELayer(nn.Module):
-    def __init__(self, num_channels, reduction_ratio=2, kersize=[3, 5, 10], subband_num=1):
-        super(ChannelTimeSenseSELayer, self).__init__()
-        num_channels_reduced = num_channels // reduction_ratio
-
-        self.smallConv1d = nn.Sequential(
-            nn.Conv1d(num_channels, num_channels, kernel_size=kersize[0], groups=num_channels // subband_num),
-            nn.AdaptiveAvgPool1d(1),
-            nn.ReLU(inplace=True)
-        )
-        self.middleConv1d = nn.Sequential(
-            nn.Conv1d(num_channels, num_channels, kernel_size=kersize[1], groups=num_channels // subband_num),
-            nn.AdaptiveAvgPool1d(1),
-            nn.ReLU(inplace=True)
-        )
-        self.largeConv1d = nn.Sequential(
-            nn.Conv1d(num_channels, num_channels, kernel_size=kersize[2], groups=num_channels // subband_num),
-            nn.AdaptiveAvgPool1d(1),
-            nn.ReLU(inplace=True)
-        )
-        self.feature_concate_fc = nn.Linear(3, 1, bias=True)
-        self.fc1 = nn.Linear(num_channels, num_channels_reduced, bias=True)
-        self.fc2 = nn.Linear(num_channels_reduced, num_channels, bias=True)
-        self.relu = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, input_tensor):
-        small_feature = self.smallConv1d(input_tensor)
-
-        middle_feature = self.middleConv1d(input_tensor)
-
-        large_feature = self.largeConv1d(input_tensor)
-
-        feature = torch.cat([small_feature, middle_feature, large_feature], dim=2)
-
-        squeeze_tensor = self.feature_concate_fc(feature)[..., 0]
-        fc_out_1 = self.relu(self.fc1(squeeze_tensor))
-        fc_out_2 = self.sigmoid(self.fc2(fc_out_1))
-        a, b = squeeze_tensor.size()
-        output_tensor = torch.mul(input_tensor, fc_out_2.view(a, b, 1))
-
-        return output_tensor
-
-
-class Conv1DBlock(nn.Module):
-    def __init__(self, in_chan, hid_chan, kernel_size, padding, dilation, norm_type="bN", delta=False):
-        super(Conv1DBlock, self).__init__()
-        conv_norm = norms.get(norm_type)
-        self.delta = delta
-        if delta:
-            self.linear = nn.Linear(in_chan, in_chan)
-            self.linear_norm = norms.get(norm_type)(in_chan*2)
-
-        in_bottle = in_chan if not delta else in_chan*2
-        in_conv1d = nn.Conv1d(in_bottle, hid_chan, 1)
-        depth_conv1d = nn.Conv1d(hid_chan, hid_chan, kernel_size, padding=padding, dilation=dilation, groups=hid_chan)
-        self.shared_block = nn.Sequential(in_conv1d, nn.PReLU(),
-                                          conv_norm(hid_chan), depth_conv1d,
-                                          nn.PReLU(), conv_norm(hid_chan))
-        self.res_conv = nn.Conv1d(hid_chan, in_chan, 1)
-
-    def forward(self, x):
-        if self.delta:
-            delta = self.linear(x.transpose(1, -1)).transpose(1, -1)
-            x = torch.cat((x, delta), 1)
-            x = self.linear_norm(x)
-
-        shared_out = self.shared_block(x)
-        res_out = self.res_conv(shared_out)
-        return res_out
-
-
-
-
-
-
-
-
-
-
 
 class TCN(nn.Module):
     def __init__(self, in_chan=128, shape=(64, 81), out_classes=4, n_blocks=5, bn_chan=64, n_repeats=3, hid_chan=128, kernel_size=3, norm_type="gLN", **kwargs):
@@ -1985,6 +1873,124 @@ class TCNet(nn.Module):
         x = self.fc2(x)  # Shape: [batch_size, out_classes]
 
         return x
+
+
+
+
+
+
+
+class SoftAttentionPooling(nn.Module):
+    def __init__(self, num_frames):
+        super(SoftAttentionPooling, self).__init__()
+        self.W = nn.Parameter(torch.randn(1, num_frames))  # Trainable parameter W of size 1xnum_frames
+
+    def forward(self, x):
+        """
+        Args:
+            x (torch.Tensor): Input tensor of shape [batch_size, feature_dim, num_frames]
+        
+        Returns:
+            torch.Tensor: Output tensor of shape [batch_size, feature_dim]
+        """
+        # Transpose x to [batch_size, num_frames, feature_dim] for multiplication
+        x_transposed = x.permute(0, 2, 1)  # Shape: [batch_size, num_frames, feature_dim]
+
+
+        # Compute attention scores (unnormalized)
+        attention_scores = torch.tanh(torch.matmul(x_transposed, self.W.T))  # Shape: [batch_size, num_frames, 1]
+        
+        # Apply softmax to get attention weights
+        attention_weights = F.softmax(attention_scores, dim=1)  # Shape: [batch_size, num_frames, 1]
+    
+        # Apply attention weights to the input tensor by multiplying weights with features
+        weighted_sum = torch.sum(attention_weights * x_transposed, dim=1)  # Shape: [batch_size, feature_dim]
+
+
+
+        return weighted_sum
+   
+
+
+class ChannelTimeSenseSELayer(nn.Module):
+    def __init__(self, num_channels, reduction_ratio=2, kersize=[3, 5, 10], subband_num=1):
+        super(ChannelTimeSenseSELayer, self).__init__()
+        num_channels_reduced = num_channels // reduction_ratio
+
+        self.smallConv1d = nn.Sequential(
+            nn.Conv1d(num_channels, num_channels, kernel_size=kersize[0], groups=num_channels // subband_num),
+            nn.AdaptiveAvgPool1d(1),
+            nn.ReLU(inplace=True)
+        )
+        self.middleConv1d = nn.Sequential(
+            nn.Conv1d(num_channels, num_channels, kernel_size=kersize[1], groups=num_channels // subband_num),
+            nn.AdaptiveAvgPool1d(1),
+            nn.ReLU(inplace=True)
+        )
+        self.largeConv1d = nn.Sequential(
+            nn.Conv1d(num_channels, num_channels, kernel_size=kersize[2], groups=num_channels // subband_num),
+            nn.AdaptiveAvgPool1d(1),
+            nn.ReLU(inplace=True)
+        )
+        self.feature_concate_fc = nn.Linear(3, 1, bias=True)
+        self.fc1 = nn.Linear(num_channels, num_channels_reduced, bias=True)
+        self.fc2 = nn.Linear(num_channels_reduced, num_channels, bias=True)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, input_tensor):
+        small_feature = self.smallConv1d(input_tensor)
+
+        middle_feature = self.middleConv1d(input_tensor)
+
+        large_feature = self.largeConv1d(input_tensor)
+
+        feature = torch.cat([small_feature, middle_feature, large_feature], dim=2)
+
+        squeeze_tensor = self.feature_concate_fc(feature)[..., 0]
+        fc_out_1 = self.relu(self.fc1(squeeze_tensor))
+        fc_out_2 = self.sigmoid(self.fc2(fc_out_1))
+        a, b = squeeze_tensor.size()
+        output_tensor = torch.mul(input_tensor, fc_out_2.view(a, b, 1))
+
+        return output_tensor
+
+
+class Conv1DBlock(nn.Module):
+    def __init__(self, in_chan, hid_chan, kernel_size, padding, dilation, norm_type="bN", delta=False):
+        super(Conv1DBlock, self).__init__()
+        conv_norm = norms.get(norm_type)
+        self.delta = delta
+        if delta:
+            self.linear = nn.Linear(in_chan, in_chan)
+            self.linear_norm = norms.get(norm_type)(in_chan*2)
+
+        in_bottle = in_chan if not delta else in_chan*2
+        in_conv1d = nn.Conv1d(in_bottle, hid_chan, 1)
+        depth_conv1d = nn.Conv1d(hid_chan, hid_chan, kernel_size, padding=padding, dilation=dilation, groups=hid_chan)
+        self.shared_block = nn.Sequential(in_conv1d, nn.PReLU(),
+                                          conv_norm(hid_chan), depth_conv1d,
+                                          nn.PReLU(), conv_norm(hid_chan))
+        self.res_conv = nn.Conv1d(hid_chan, in_chan, 1)
+
+    def forward(self, x):
+        if self.delta:
+            delta = self.linear(x.transpose(1, -1)).transpose(1, -1)
+            x = torch.cat((x, delta), 1)
+            x = self.linear_norm(x)
+
+        shared_out = self.shared_block(x)
+        res_out = self.res_conv(shared_out)
+        return res_out
+
+
+
+
+
+
+
+
+
 
 
 
