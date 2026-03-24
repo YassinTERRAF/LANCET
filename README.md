@@ -119,11 +119,14 @@ The script supports:
 If you find this work useful, please consider citing:
 
 ```bibtex
-@article{lancet2026,
-  title   = {LANCET: Lightweight Attention-enhanced CNN-based Emotion Recognition Network},
-  author  = {Terraf, Yassin and Iraqi, Youssef},
-  journal = {Under review},
-  year    = {2026}
+@INPROCEEDINGS{11226051,
+  author={Terraf, Yassin and Iraqi, Youssef},
+  booktitle={2025 33rd European Signal Processing Conference (EUSIPCO)}, 
+  title={LANCET: Lightweight Attention-Enhanced Network for Robust Speech Emotion Recognition}, 
+  year={2025},
+  pages={371-375},
+  keywords={Emotion recognition;Attention mechanisms;Computational modeling;Speech recognition;Transformers;Feature extraction;Acoustics;Recording;Convolutional neural networks;Speech processing;Speech Emotion Recognition;Attention Mechanism;Temporal Convolutional Network;Noise Robustness;Challenging Acoustic Environments},
+  doi={10.23919/EUSIPCO63237.2025.11226051}
 }
 ```
 
