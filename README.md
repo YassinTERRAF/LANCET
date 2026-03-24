@@ -1,103 +1,148 @@
-
 # LANCET: Lightweight Attention-enhanced CNN-based Emotion Recognition Network
 
-This repository contains the official implementation of **LANCET**, a novel lightweight neural network architecture designed for robust speech emotion recognition in clean and noisy conditions. 
+This repository provides the official implementation of **LANCET**, a lightweight deep learning architecture for **speech emotion recognition (SER)** under both clean and noisy conditions.
 
 ---
 
-## Table of Contents
+## 🔍 Overview
 
-1. [Introduction](#introduction)  
-2. [Dataset Preparation](#dataset-preparation)  
-   - [Download IEMOCAP Dataset](#download-iemocap-dataset)  
-   - [Augment IEMOCAP Dataset](#augment-iemocap-dataset)  
-3. [Feature Extraction](#feature-extraction)  
-4. [Model Implementation](#model-implementation)  
-5. [Training and Evaluation](#training-and-evaluation)  
-6. [Citation](#citation)  
-7. [Contact](#contact)  
+LANCET combines:
+- **Multiscale Channel-wise Attention**
+- **Temporal Convolutional Networks (TCN)**
+- **Frame-wise Attention**
 
----
+to effectively capture both **spectral** and **temporal** dependencies in speech signals.
 
-## Introduction
-
-LANCET introduces a **Multiscale Channel-wise Attention Mechanism**, a **Temporal Convolutional Network (TCN)**, and **Frame-wise Attention** to effectively capture spectral and temporal dependencies in speech signals. The architecture is designed to perform well in both clean and challenging acoustic environments, leveraging the IEMOCAP dataset for training and evaluation.  
-This repository also includes scripts for dataset preparation, feature extraction, and training/testing of LANCET and competing methods.
+The model is designed to be **efficient, robust, and scalable**, making it suitable for real-world emotion recognition tasks in challenging acoustic environments.
 
 ---
 
-## Dataset Preparation
+## 📂 Repository Structure
 
-### Download IEMOCAP Dataset
-
-1. **Download the IEMOCAP Dataset**:  
-   The IEMOCAP dataset is publicly available for academic use. You can request access and download it from the [official website](https://sail.usc.edu/iemocap/iemocap_release.htm).  
-   
-2. **Organize the Dataset**:  
-   Once downloaded, place the dataset in the following directory:  
-   ```
-   datasets/IEMOCAP/
-   ```
-
----
-
-### Augment IEMOCAP Dataset
-
-To evaluate performance under noisy conditions, augment the IEMOCAP dataset with noise types (e.g., babble, music, ambient noise) at various signal-to-noise ratio (SNR) levels.
-
-1. **Run the Augmentation Script**:  
-   Use the script provided in the repository to augment the dataset:  
-   ```
-   python datasets/augment_IEMOCAP.py
-   ```
-   - This script explains how to add different noise types and SNR levels to the original dataset.  
-   - Augmented audio files will be saved in the `datasets/IEMOCAP_augmented/` folder.  
-
-2. **Rename Audio Files**:  
-   After augmentation, standardize filenames across the dataset by running:  
-   ```
-   python datasets/handleIEMOCAP.py
-   ```
-
----
-
-## Feature Extraction
-
-The repository provides scripts to extract multiple types of features from speech signals:
-
-- **Log Mel Spectrogram**:  
-  ```
-  python feature_extraction/extract_features_iemocap_mel_spectrogram.py
-  ```
-- **MFCC Features**:  
-  ```
-  python feature_extraction/extract_features_iemocap_mfcc.py
-  ```
-- **Spectrogram**:  
-  ```
-  python feature_extraction/extract_features_iemocap_spectrogram.py
-  ```
-
-Specify the dataset paths in the scripts to extract features for both the original and augmented datasets.
-
----
-
-## Model Implementation
-
-The file `models.py` includes the implementation of:  
-- **LANCET**: The proposed Lightweight Attention-enhanced CNN-based Emotion Recognition Network.  
-- **Baseline Methods**: State-of-the-art CNN-based approaches, such as GLAM and TC-Net, for comparative analysis.
-
----
-
-## Training and Evaluation
-
-Train and evaluate LANCET on the IEMOCAP dataset using:  
 ```
+LANCET/
+├── datasets/                      # Dataset preparation and augmentation scripts
+├── feature_extraction/           # Feature extraction scripts
+├── models.py                     # LANCET and baseline implementations
+├── train_LANCET.py               # Training and evaluation script
+```
+
+---
+
+## 📥 Dataset Preparation
+
+### 1. Download IEMOCAP
+
+The IEMOCAP dataset is available for academic use:
+
+👉 https://sail.usc.edu/iemocap/iemocap_release.htm  
+
+After downloading, place it in:
+
+```
+datasets/IEMOCAP/
+```
+
+---
+
+### 2. Data Augmentation (Optional)
+
+To simulate noisy environments:
+
+```bash
+python datasets/augment_IEMOCAP.py
+```
+
+This script:
+- Adds noise (babble, music, ambient, etc.)
+- Supports multiple SNR levels
+- Saves outputs to `datasets/IEMOCAP_augmented/`
+
+Then standardize filenames:
+
+```bash
+python datasets/handleIEMOCAP.py
+```
+
+---
+
+## 🚀 Feature Extraction
+
+Extract features using the provided scripts:
+
+```bash
+# Log-Mel Spectrogram
+python feature_extraction/extract_features_iemocap_mel_spectrogram.py
+
+# MFCC
+python feature_extraction/extract_features_iemocap_mfcc.py
+
+# Spectrogram
+python feature_extraction/extract_features_iemocap_spectrogram.py
+```
+
+Make sure to configure dataset paths inside each script.
+
+---
+
+## 🧠 Model Implementation
+
+The file `models.py` includes:
+
+- **LANCET** (Proposed Model)  
+- **Baseline Models** (e.g., GLAM, TC-Net)
+
+These implementations allow direct comparison with state-of-the-art methods.
+
+---
+
+## 🏋️ Training and Evaluation
+
+Train and evaluate models using:
+
+```bash
 python train_LANCET.py
 ```
 
-Key features:
-- Performs training and testing for LANCET and baseline methods.
-- Reports key metrics such as weighted accuracy (WA) and unweighted accuracy (UA).
+### Evaluation Metrics
+- **Weighted Accuracy (WA)**
+- **Unweighted Accuracy (UA)**
 
+The script supports:
+- Training on clean and noisy datasets
+- Evaluation of both LANCET and baseline models
+
+---
+
+## 📖 Citation
+
+If you find this work useful, please consider citing:
+
+```bibtex
+@article{lancet2026,
+  title   = {LANCET: Lightweight Attention-enhanced CNN-based Emotion Recognition Network},
+  author  = {Terraf, Yassin and Iraqi, Youssef},
+  journal = {Under review},
+  year    = {2026}
+}
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!  
+Feel free to open issues or submit pull requests.
+
+---
+
+## 📄 License
+
+This project is released under the MIT License.
+
+---
+
+## 📬 Contact
+
+- 📧 Email: yassin.terraf@um6p.ma  
+- 🔗 LinkedIn: https://www.linkedin.com/in/yassin-terraf-206597151/
